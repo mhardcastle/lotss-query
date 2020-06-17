@@ -107,7 +107,7 @@ class SurveysDB(object):
     def __exit__(self, type, value, tb):
         self.close()
 
-    def __init__(self,readonly=False,verbose=False):
+    def __init__(self,readonly=False,verbose=False,survey="hba"):
 
         # get the config file -- this must exist
         home=os.getenv("HOME")
@@ -116,23 +116,29 @@ class SurveysDB(object):
             mysql_host='lofar-server.data'
         if verbose:
             print('MySQL host is',mysql_host)
-        cfg=open(home+'/.surveys').readlines()
-        self.password=cfg[0].rstrip()
+        cfg=[l.rstrip() for l in open(home+'/.surveys').readlines()]
+        self.password=cfg[0]
         try:
-            self.ssh_user=cfg[1].rstrip()
+            self.ssh_user=cfg[1]
         except:
             self.ssh_user=None
         
         try:
-            self.ssh_key=cfg[2].rstrip()
+            self.ssh_key=cfg[2]
         except:
             self.ssh_key="id_rsa"
 
-        # read only use
         self.readonly=readonly
         self.verbose=verbose
-
-        self.tables=['fields','observations','quality','transients','reprocessing']
+        self.survey=survey
+        if self.survey=='hba':
+            self.database='surveys'
+            self.tables=['fields','observations','quality','transients','reprocessing']
+        elif self.survey=='lba':
+            self.database='lba'
+            self.tables=['fields','observations']
+        else:
+            raise NotImplementedError('Survey "%s" not known' % self.survey)
         
         # set up an ssh tunnel if not running locally
         self.usetunnel=False
@@ -140,7 +146,7 @@ class SurveysDB(object):
         if self.hostname=='lofar-server':
             if verbose:
                 print('Using direct connection to localhost')
-            self.con = mdb.connect('127.0.0.1', 'survey_user', self.password, 'surveys',cursorclass=mdbcursors.DictCursor)
+            self.con=mdb.connect('127.0.0.1', 'survey_user', self.password, self.database, cursorclass=mdbcursors.DictCursor)
         else:
             try:
                 dummy=socket.gethostbyname(mysql_host)
@@ -290,10 +296,7 @@ class SurveysDB(object):
 
 
 if __name__=='__main__':
-    sdb=SurveysDB(verbose=True)
-    result=sdb.db_get('fields','P35Hetdex10')
-    #result['location']='Never Never Land'
-    #sdb.set_id(result)
+    with SurveysDB(verbose=True,survey='hba') as sdb:
+        result=sdb.db_get('fields','P35Hetdex10')
     print(result)
-    sdb.close()
 

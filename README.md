@@ -1,6 +1,15 @@
+# lotss-query
+
+This repository contains the module that enables interaction with the
+LoTSS surveys database. ddf-pipeline depends on this module but it can
+be used stand alone.
+
+Users must have an account on the LoTSS database server (or run their
+own local equivalent).
+
 # Database documentation
 
-The LoTSS database back end is a MySQL database with 6 tables:
+The LoTSS HBA database back end is a MySQL database with 6 tables:
 
 ```
 MariaDB [surveys]> show tables;
