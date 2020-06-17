@@ -1,7 +1,10 @@
+from __future__ import print_function
+from builtins import object
 import sshtunnel
 import socket
 import os
 import datetime
+from time import sleep
 try:
     import MySQLdb as mdb
     import MySQLdb.cursors as mdbcursors
@@ -13,7 +16,7 @@ except ImportError:
 def get_next():
     # return the name of the top-priority field with appropriate status
     sdb=SurveysDB(readonly=True)
-    sdb.cur.execute('select fields.id as id,sum(nsb*integration/232) as s,count(observations.id) as c,fields.priority from fields left join observations on (observations.field=fields.id) where fields.status="Not started" and (observations.status="Archived" or observations.status="DI_processed") and (gal_b>10 or gal_b<-10) group by fields.id having s>7 order by fields.priority desc,ra desc')
+    sdb.cur.execute('select fields.id as id,sum(nsb*integration/232) as s,count(observations.id) as c,fields.priority,fields.lotss_field from fields left join observations on (observations.field=fields.id) where fields.status="Not started" and (observations.status="Archived" or observations.status="DI_processed") and (gal_b>10 or gal_b<-10 or gal_b is NULL or fields.priority>9) group by fields.id having (s>7 or lotss_field=0) order by fields.priority desc,ra desc')
     results=sdb.cur.fetchall()
     sdb.close()
     if len(results)>0:
@@ -108,6 +111,11 @@ class SurveysDB(object):
 
         # get the config file -- this must exist
         home=os.getenv("HOME")
+        mysql_host=os.getenv('DDF_PIPELINE_MYSQLHOST')
+        if not mysql_host:
+            mysql_host='lofar-server.data'
+        if verbose:
+            print('MySQL host is',mysql_host)
         cfg=open(home+'/.surveys').readlines()
         self.password=cfg[0].rstrip()
         try:
@@ -130,11 +138,15 @@ class SurveysDB(object):
         self.usetunnel=False
         self.hostname=socket.gethostname()
         if self.hostname=='lofar-server':
-            self.con = mdb.connect('127.0.0.1', 'survey_user', self.password, 'surveys')
+            if verbose:
+                print('Using direct connection to localhost')
+            self.con = mdb.connect('127.0.0.1', 'survey_user', self.password, 'surveys',cursorclass=mdbcursors.DictCursor)
         else:
             try:
-                dummy=socket.gethostbyname('lofar-server.data')
-            except:
+                dummy=socket.gethostbyname(mysql_host)
+            except socket.gaierror:
+                if verbose:
+                    print('Cannot find host',mysql_host,'will use tunnel')
                 self.usetunnel=True
 
             if self.usetunnel:
@@ -146,10 +158,21 @@ class SurveysDB(object):
 
                 self.tunnel.start()
                 localport=self.tunnel.local_bind_port
-                self.con = mdb.connect('127.0.0.1', 'survey_user', self.password, 'surveys', port=localport)
+                self.con = mdb.connect('127.0.0.1', 'survey_user', self.password, 'surveys', port=localport, cursorclass=mdbcursors.DictCursor)
             else:
-                self.con = mdb.connect('lofar-server.data', 'survey_user', self.password, 'surveys')
-        self.cur = self.con.cursor(cursorclass=mdbcursors.DictCursor)
+                connected=False
+                retry=0
+                while not connected and retry<10:
+                    try:
+                        self.con = mdb.connect(mysql_host, 'survey_user', self.password, 'surveys',cursorclass=mdbcursors.DictCursor)
+                        connected=True
+                    except mdb.OperationalError as e:
+                        print('Database temporary error! Sleep to retry',e)
+                        retry+=1
+                        sleep(20)
+                if not connected:
+                    raise RuntimeError("Cannot connect to database server")
+        self.cur = self.con.cursor()
         if self.readonly:
             pass
             #can't use this feature on lofar's version of MariaDB
@@ -164,17 +187,19 @@ class SurveysDB(object):
 
     def execute(self,*args):
         if self.verbose:
-            print args
+            print(args)
         self.cur.execute(*args)
 
     def close(self):
-        if not self.closed:
-            if not self.readonly:
-                self.cur.execute('unlock tables')
-            self.con.close()
-            if self.usetunnel:
-                self.tunnel.stop()
-            self.closed=True # prevent del from trying again
+        # if 'closed' doesn't exist, then we are most likely being called through __del__ due to a failure in the init call. So skip the rest.
+        if hasattr(self,'closed'):
+            if not self.closed:
+                if not self.readonly:
+                    self.cur.execute('unlock tables')
+                self.con.close()
+                if self.usetunnel:
+                    self.tunnel.stop()
+                self.closed=True # prevent del from trying again
     
     def __del__(self):
         self.close()
@@ -269,6 +294,6 @@ if __name__=='__main__':
     result=sdb.db_get('fields','P35Hetdex10')
     #result['location']='Never Never Land'
     #sdb.set_id(result)
-    print result
+    print(result)
     sdb.close()
 
