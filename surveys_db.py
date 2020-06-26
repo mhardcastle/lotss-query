@@ -45,7 +45,7 @@ def get_next_extraction():
     else:
         return None
 
-def update_status(name,status,time=None,workdir=None,av=None):
+def update_status(name,status,time=None,workdir=None,av=None,survey=None):
     # utility function to just update the status of a field
     # name can be None (work it out from cwd), or string (field name)
 
@@ -55,7 +55,7 @@ def update_status(name,status,time=None,workdir=None,av=None):
     else:
         id=name
         
-    with SurveysDB() as sdb:
+    with SurveysDB(survey=survey) as sdb:
       idd=sdb.get_field(id)
       if idd is None:
           raise RuntimeError('Unable to find database entry for field "%s".' % id)
@@ -107,8 +107,10 @@ class SurveysDB(object):
     def __exit__(self, type, value, tb):
         self.close()
 
-    def __init__(self,readonly=False,verbose=False,survey="hba"):
+    def __init__(self,readonly=False,verbose=False,survey=None):
 
+        if survey is None:
+            survey='hba' # preserve old default behaviour
         # get the config file -- this must exist
         home=os.getenv("HOME")
         mysql_host=os.getenv('DDF_PIPELINE_MYSQLHOST')

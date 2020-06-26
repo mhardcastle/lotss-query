@@ -5,7 +5,7 @@ LoTSS surveys database. ddf-pipeline depends on this module but it can
 be used stand alone.
 
 Users must have an account on the LoTSS database server (or run their
-own local equivalent).
+own local equivalent) and `DDF_PIPELINE_MYSQLHOST` must point to the IP address of this machine, which will be accessible by ssh.
 
 # Database documentation
 
@@ -34,6 +34,8 @@ These respectively contain:
 * spectra: the current list of dynamical spectra and their properties (each dynamical spectrum should correspond to a source in the transients table)
 * transients: the current list of sources for which dynamical spectra should be found.
 
+You can access other databases by the `survey` optional argument to `SurveysDB`, e.g. `survey='lba'`. 
+
 Programmers' notes
 ------------------
 
@@ -61,9 +63,9 @@ the ssh tunnel method a fixed port is used by default so only one
 instance per machine is possible (change with localport=xxxxx).
 
 SurveysDB exports the `.cur` method which is a PyMySQLdb cursor, so
-low-level operations are possible. If you want to carry out a complex query, you should design it in MySQL and use the 
+low-level operations are possible. If you want to carry out a complex query, you should design it in MySQL and use the `.cur` method.
 
-Or use the `db_get`, `db_set` and `db_create` methods. These take two arguments,
+Or you can use the `db_get`, `db_set` and `db_create` methods. These take two arguments,
 a table to use and a dictionary or an ID. `db_get` populates a
 dictionary with the results of a query for that table and ID: dictionary keys
 are column names. `db_set` takes a dictionary and puts it back into
