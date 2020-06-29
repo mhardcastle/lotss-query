@@ -5,7 +5,9 @@ LoTSS surveys database. ddf-pipeline depends on this module but it can
 be used stand alone.
 
 Users must have an account on the LoTSS database server (or run their
-own local equivalent) and `DDF_PIPELINE_MYSQLHOST` must point to the IP address of this machine, which will be accessible by ssh.
+own local equivalent). By default, without local environment variables
+set, the code will try to establish an ssh tunnel to the LoTSS
+database server and use that for database communication.
 
 # Database documentation
 
