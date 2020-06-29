@@ -166,13 +166,13 @@ class SurveysDB(object):
 
                 self.tunnel.start()
                 localport=self.tunnel.local_bind_port
-                self.con = mdb.connect('127.0.0.1', 'survey_user', self.password, 'surveys', port=localport, cursorclass=mdbcursors.DictCursor)
+                self.con = mdb.connect('127.0.0.1', 'survey_user', self.password, self.database, port=localport, cursorclass=mdbcursors.DictCursor)
             else:
                 connected=False
                 retry=0
                 while not connected and retry<10:
                     try:
-                        self.con = mdb.connect(mysql_host, 'survey_user', self.password, 'surveys',cursorclass=mdbcursors.DictCursor)
+                        self.con = mdb.connect(mysql_host, 'survey_user', self.password, self.database ,cursorclass=mdbcursors.DictCursor)
                         connected=True
                     except mdb.OperationalError as e:
                         print('Database temporary error! Sleep to retry',e)
