@@ -138,7 +138,7 @@ class SurveysDB(object):
             self.tables=['fields','observations','quality','transients','reprocessing']
         elif self.survey=='lba':
             self.database='lba'
-            self.tables=['fields','observations']
+            self.tables=['fields','observations','field_obs']
         else:
             raise NotImplementedError('Survey "%s" not known' % self.survey)
         
