@@ -1,6 +1,17 @@
+# lotss-query
+
+This repository contains the module that enables interaction with the
+LoTSS surveys database. ddf-pipeline depends on this module but it can
+be used stand alone.
+
+Users must have an account on the LoTSS database server (or run their
+own local equivalent). By default, without local environment variables
+set, the code will try to establish an ssh tunnel to the LoTSS
+database server and use that for database communication.
+
 # Database documentation
 
-The LoTSS database back end is a MySQL database with 6 tables:
+The LoTSS HBA database back end is a MySQL database with 6 tables:
 
 ```
 MariaDB [surveys]> show tables;
@@ -24,6 +35,8 @@ These respectively contain:
 * reprocessing: lists the current reprocessing tasks and their status.
 * spectra: the current list of dynamical spectra and their properties (each dynamical spectrum should correspond to a source in the transients table)
 * transients: the current list of sources for which dynamical spectra should be found.
+
+You can access other databases by the `survey` optional argument to `SurveysDB`, e.g. `survey='lba'`. 
 
 Programmers' notes
 ------------------
@@ -52,9 +65,9 @@ the ssh tunnel method a fixed port is used by default so only one
 instance per machine is possible (change with localport=xxxxx).
 
 SurveysDB exports the `.cur` method which is a PyMySQLdb cursor, so
-low-level operations are possible. If you want to carry out a complex query, you should design it in MySQL and use the 
+low-level operations are possible. If you want to carry out a complex query, you should design it in MySQL and use the `.cur` method.
 
-Or use the `db_get`, `db_set` and `db_create` methods. These take two arguments,
+Or you can use the `db_get`, `db_set` and `db_create` methods. These take two arguments,
 a table to use and a dictionary or an ID. `db_get` populates a
 dictionary with the results of a query for that table and ID: dictionary keys
 are column names. `db_set` takes a dictionary and puts it back into
