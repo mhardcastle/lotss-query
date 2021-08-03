@@ -135,10 +135,8 @@ class SurveysDB(object):
         self.survey=survey
         if self.survey=='hba':
             self.database='surveys'
-            self.tables=['fields','observations','quality','transients','reprocessing']
         elif self.survey=='lba':
             self.database='lba'
-            self.tables=['fields','observations','field_obs']
         else:
             raise NotImplementedError('Survey "%s" not known' % self.survey)
         
@@ -172,15 +170,22 @@ class SurveysDB(object):
                 retry=0
                 while not connected and retry<10:
                     try:
-                        self.con = mdb.connect(mysql_host, 'survey_user', self.password, self.database ,cursorclass=mdbcursors.DictCursor)
+                        self.con = mdb.connect(mysql_host, 'survey_user', self.password, self.database, cursorclass=mdbcursors.DictCursor)
                         connected=True
                     except mdb.OperationalError as e:
-                        print('Database temporary error! Sleep to retry',e)
+                        time=60
+                        print('Database temporary error! Sleep %i seconds to retry\n' % time ,e)
                         retry+=1
-                        sleep(20)
+                        sleep(time)
                 if not connected:
-                    raise RuntimeError("Cannot connect to database server")
+                    raise RuntimeError("Cannot connect to database server after repeated retry")
         self.cur = self.con.cursor()
+
+        # get the tables list for locking
+        self.cur.execute('show tables')
+        result=self.cur.fetchall()
+        self.tables=[d.items()[0][1] for d in result]
+        
         if self.readonly:
             pass
             #can't use this feature on lofar's version of MariaDB
