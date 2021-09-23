@@ -219,7 +219,7 @@ class SurveysDB(object):
         # get the tables list for locking
         self.cur.execute('show tables')
         result=self.cur.fetchall()
-        self.tables=[list(d.itervalues())[0] for d in result]
+        self.tables=[list(d.values())[0] for d in result]
         
         if self.readonly:
             pass
