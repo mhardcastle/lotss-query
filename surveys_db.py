@@ -79,7 +79,6 @@ def update_reprocessing_extract(name,field,status):
         splitstatus[desindex] = status
         extractdict['extract_status'] = ','.join(splitstatus)
         sdb.db_set('reprocessing',extractdict)
-        sdb.close()
 
 def update_status(name,status,time=None,workdir=None,av=None,survey=None):
     # utility function to just update the status of a field
