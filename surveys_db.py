@@ -39,9 +39,34 @@ def get_next_extraction():
     sdb=SurveysDB(readonly=True)
     sdb.cur.execute('select reprocessing.id,reprocessing.priority,reprocessing.fields,reprocessing.extract_status from reprocessing where reprocessing.extract_status like "%EREADY%" group by reprocessing.priority desc')
     results=sdb.cur.fetchall()
+    #print(results[0])
     sdb.close()
+
+    # Find next field for target
+    fields = results[0]['fields'].split(',')
+    extract_status = results[0]['extract_status'].split(',')
+    try:
+        bad_pointings = results[0]['bad_pointings'].split(',')
+    except KeyError:
+        bad_pointings = ['']
+
+    for i in range(0,len(fields)):
+        if extract_status[i] != 'EREADY':
+            continue
+        field = fields[i]
+        if field in bad_pointings:
+            print('Field',field,'in bad pointings -- skipping and setting to BADP')
+            sdb=SurveysDB()
+            extractdict = sdb.get_reprocessing(results[0]['id'])
+            extract_status[i] = 'BADP'
+            extractdict['extract_status'] = ','.join(extract_status)
+            sdb.db_set('reprocessing',extractdict)
+            sdb.close()
+            continue
+
+    print('Next extraction:',results[0]['id'],fields[i])
     if len(results)>0:
-        return results[0]
+        return  results[0]['id'],fields[i]
     else:
         return None
 
