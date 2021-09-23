@@ -69,6 +69,17 @@ def get_next_extraction():
         return  results[0]['id'],fields[seli]
     else:
         return None
+    
+    
+def update_reprocessing_extract(name,field,status):
+    with SurveysDB() as sdb:
+        extractdict = sdb.get_reprocessing(name)
+        desindex = extractdict['fields'].split(',').index(field)
+        splitstatus = extractdict['extract_status'].split(',')
+        splitstatus[desindex] = status
+        extractdict['extract_status'] = ','.join(splitstatus)
+        sdb.db_set('reprocessing',extractdict)
+        sdb.close()
 
 def update_status(name,status,time=None,workdir=None,av=None,survey=None):
     # utility function to just update the status of a field
