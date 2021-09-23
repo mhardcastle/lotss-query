@@ -63,10 +63,10 @@ def get_next_extraction():
             sdb.db_set('reprocessing',extractdict)
             sdb.close()
             continue
-
-    print('Next extraction:',results[0]['id'],fields[i])
+        seli = i
+    print('Next extraction:',results[0]['id'],fields[seli])
     if len(results)>0:
-        return  results[0]['id'],fields[i]
+        return  results[0]['id'],fields[seli]
     else:
         return None
 
