@@ -37,7 +37,7 @@ def get_next_selfcalibration():
 def get_next_extraction():
     # return the name of the top-priority field with appropriate status
     sdb=SurveysDB(readonly=True)
-    sdb.cur.execute('select reprocessing.id,reprocessing.priority,reprocessing.fields,reprocessing.extract_status from reprocessing where reprocessing.extract_status like "%EREADY%" group by reprocessing.priority desc')
+    sdb.cur.execute('select * from reprocessing where reprocessing.extract_status like "%EREADY%" group by reprocessing.priority desc')
     results=sdb.cur.fetchall()
     #print(results[0])
     sdb.close()
@@ -66,7 +66,7 @@ def get_next_extraction():
         seli = i
     print('Next extraction:',results[0]['id'],fields[seli])
     if len(results)>0:
-        return  results[0]['id'],fields[seli]
+        return  results[0]['id'],fields[seli],results[0]['ra'],results[0]['decl'],results[0]['size']
     else:
         return None
     
