@@ -38,13 +38,48 @@ def get_next_selfcalibration():
 def get_next_extraction():
     # return the name of the top-priority field with appropriate status
     sdb=SurveysDB(readonly=True)
-    sdb.cur.execute('select reprocessing.id,reprocessing.priority,reprocessing.fields,reprocessing.extract_status from reprocessing where reprocessing.extract_status like "%EREADY%" group by reprocessing.priority desc')
+    sdb.cur.execute('select * from reprocessing where reprocessing.extract_status like "%EREADY%" group by reprocessing.priority desc')
     results=sdb.cur.fetchall()
+    #print(results[0])
     sdb.close()
+
+    # Find next field for target
+    fields = results[0]['fields'].split(',')
+    extract_status = results[0]['extract_status'].split(',')
+    try:
+        bad_pointings = results[0]['bad_pointings'].split(',')
+    except KeyError:
+        bad_pointings = ['']
+
+    for i in range(0,len(fields)):
+        if extract_status[i] != 'EREADY':
+            continue
+        field = fields[i]
+        if field in bad_pointings:
+            print('Field',field,'in bad pointings -- skipping and setting to BADP')
+            sdb=SurveysDB()
+            extractdict = sdb.get_reprocessing(results[0]['id'])
+            extract_status[i] = 'BADP'
+            extractdict['extract_status'] = ','.join(extract_status)
+            sdb.db_set('reprocessing',extractdict)
+            sdb.close()
+            continue
+        seli = i
+    print('Next extraction:',results[0]['id'],fields[seli])
     if len(results)>0:
-        return results[0]
+        return  results[0]['id'],fields[seli],results[0]['ra'],results[0]['decl'],results[0]['size']
     else:
         return None
+    
+    
+def update_reprocessing_extract(name,field,status):
+    with SurveysDB() as sdb:
+        extractdict = sdb.get_reprocessing(name)
+        desindex = extractdict['fields'].split(',').index(field)
+        splitstatus = extractdict['extract_status'].split(',')
+        splitstatus[desindex] = status
+        extractdict['extract_status'] = ','.join(splitstatus)
+        sdb.db_set('reprocessing',extractdict)
 
 def update_status(name,status,time=None,workdir=None,av=None,survey=None):
     # utility function to just update the status of a field
