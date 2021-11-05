@@ -1,4 +1,5 @@
 from __future__ import print_function
+from future.utils import itervalues
 from builtins import object
 import sshtunnel
 import socket
@@ -219,7 +220,7 @@ class SurveysDB(object):
         # get the tables list for locking
         self.cur.execute('show tables')
         result=self.cur.fetchall()
-        self.tables=[list(d.values())[0] for d in result]
+        self.tables=[list(itervalues(d))[0] for d in result]
         
         if self.readonly:
             pass
