@@ -43,12 +43,15 @@ def get_next_extraction():
     #print(results[0])
     sdb.close()
 
+    if len(results)==0:
+        return None
+    
     # Find next field for target
     fields = results[0]['fields'].split(',')
     extract_status = results[0]['extract_status'].split(',')
     try:
         bad_pointings = results[0]['bad_pointings'].split(',')
-    except KeyError:
+    except AttributeError,KeyError:
         bad_pointings = ['']
 
     for i in range(0,len(fields)):
