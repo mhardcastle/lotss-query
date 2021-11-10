@@ -51,7 +51,7 @@ def get_next_extraction():
     extract_status = results[0]['extract_status'].split(',')
     try:
         bad_pointings = results[0]['bad_pointings'].split(',')
-    except AttributeError,KeyError:
+    except (AttributeError,KeyError):
         bad_pointings = ['']
 
     for i in range(0,len(fields)):
@@ -70,8 +70,7 @@ def get_next_extraction():
         seli = i
     print('Next extraction:',results[0]['id'],fields[seli])
 
-    return  results[0]['id'],fields[seli],results[0]['ra'],results[0]['decl'],results[0]['size']
-    
+    return  results[0]['id'],fields[seli],results[0]['ra'],results[0]['decl'],results[0]['size']    
     
 def update_reprocessing_extract(name,field,status):
     with SurveysDB() as sdb:
