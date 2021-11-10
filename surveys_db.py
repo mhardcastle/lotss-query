@@ -69,10 +69,8 @@ def get_next_extraction():
             continue
         seli = i
     print('Next extraction:',results[0]['id'],fields[seli])
-    if len(results)>0:
-        return  results[0]['id'],fields[seli],results[0]['ra'],results[0]['decl'],results[0]['size']
-    else:
-        return None
+
+    return  results[0]['id'],fields[seli],results[0]['ra'],results[0]['decl'],results[0]['size']
     
     
 def update_reprocessing_extract(name,field,status):
