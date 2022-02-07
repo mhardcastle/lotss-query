@@ -192,9 +192,10 @@ class SurveysDB(object):
                 self.usetunnel=True
 
             if self.usetunnel:
+                self.pkey=home+'/.ssh/'+self.ssh_key
                 self.tunnel=sshtunnel.SSHTunnelForwarder('lofar.herts.ac.uk',
                                                          ssh_username=self.ssh_user,
-                                                         ssh_pkey=home+'/.ssh/%s'%self.ssh_key,
+                                                         ssh_pkey=self.pkey,
                                                          remote_bind_address=('127.0.0.1',3306),
                                                          local_bind_address=('127.0.0.1',))
 
