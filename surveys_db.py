@@ -192,6 +192,10 @@ class SurveysDB(object):
                 self.usetunnel=True
 
             if self.usetunnel:
+                if verbose:
+                    logger=sshtunnel.create_logger(loglevel=10)
+                else:
+                    logger=None
                 # Reading the key ensures an error if it doesn't exist
                 self.pkey=sshtunnel.SSHTunnelForwarder.read_private_key_file(home+'/.ssh/'+self.ssh_key)
                 self.tunnel=sshtunnel.SSHTunnelForwarder('lofar.herts.ac.uk',
@@ -199,8 +203,9 @@ class SurveysDB(object):
                                                          ssh_pkey=self.pkey,
                                                          remote_bind_address=('127.0.0.1',3306),
                                                          local_bind_address=('127.0.0.1',),
-                                                         #host_pkey_directories=[],
-                                                         allow_agent=False
+                                                         host_pkey_directories=[],
+                                                         allow_agent=False,
+                                                         logger=logger
                                                          # if allow_agent is true it may find other keys
                                                          )
 
