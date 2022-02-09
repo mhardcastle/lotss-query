@@ -204,9 +204,8 @@ class SurveysDB(object):
                                                          remote_bind_address=('127.0.0.1',3306),
                                                          local_bind_address=('127.0.0.1',),
                                                          host_pkey_directories=[],
-                                                         allow_agent=False,
+                                                         allow_agent=True,
                                                          logger=logger
-                                                         # if allow_agent is true it may find other keys
                                                          )
 
                 self.tunnel.start()
