@@ -288,7 +288,7 @@ class SurveysDB(object):
 
     def db_delete(self,table,id):
         table=self.check_table(table)
-        if self.readonly: raise RuntimeError('Create requested in read-only mode')
+        if self.readonly: raise RuntimeError('Delete requested in read-only mode')
         self.execute('delete from '+table+' where id=%s',(id,))
         return None
     
@@ -337,6 +337,39 @@ class SurveysDB(object):
         
     def create_reprocessing(self,id):
         self.db_create('reprocessing',id)
+
+    def get_ffr(self,id,operation):
+        table='full_field_reprocessing'
+        self.execute('select * from '+table+' where id=%s and operation=%s',(id,operation))
+        result=self.cur.fetchall()
+        if len(result)==0:
+            return None
+        else:
+            return result[0]
+
+    def set_ffr(self,record):
+        table='full_field_reprocessing'
+        if self.readonly: raise RuntimeError('Write requested in read-only mode')
+        id=record['id']
+        operation=record['operation']
+        for k in record:
+            if k=='id' or k=='operation':
+                continue
+            if record[k] is not None:
+                self.execute('update '+table+' set '+k+'=%s where id=%s and operation=%s',(record[k],id,operation))
+
+
+    def create_ffr(self,id,operation):
+        table='full_field_reprocessing'
+        if self.readonly: raise RuntimeError('Create requested in read-only mode')
+        self.execute('insert into '+table+'(id,operation) values (%s,%s)',(id,operation))
+        return self.get_ffr(id,operation)
+
+    def delete_ffr(self,id,operation):
+        table='full_field_reprocessing'
+        if self.readonly: raise RuntimeError('Delete requested in read-only mode')
+        self.execute('delete from '+table+' where id=%s and operation=%s',(id,operation))
+        
 
 
 if __name__=='__main__':
