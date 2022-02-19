@@ -192,16 +192,25 @@ class SurveysDB(object):
                 self.usetunnel=True
 
             if self.usetunnel:
-                self.pkey=home+'/.ssh/'+self.ssh_key
+                if verbose:
+                    logger=sshtunnel.create_logger(loglevel=10)
+                else:
+                    logger=None
+                # Reading the key ensures an error if it doesn't exist
+                self.pkey=sshtunnel.SSHTunnelForwarder.read_private_key_file(home+'/.ssh/'+self.ssh_key)
                 self.tunnel=sshtunnel.SSHTunnelForwarder('lofar.herts.ac.uk',
                                                          ssh_username=self.ssh_user,
                                                          ssh_pkey=self.pkey,
                                                          remote_bind_address=('127.0.0.1',3306),
-                                                         local_bind_address=('127.0.0.1',))
+                                                         local_bind_address=('127.0.0.1',),
+                                                         host_pkey_directories=[],
+                                                         allow_agent=True,
+                                                         logger=logger
+                                                         )
 
                 self.tunnel.start()
                 localport=self.tunnel.local_bind_port
-                self.con = mdb.connect('127.0.0.1', 'survey_user', self.password, self.database, port=localport, cursorclass=mdbcursors.DictCursor)
+                self.con = mdb.connect(host='127.0.0.1', user='survey_user', password=self.password, database=self.database, port=localport, cursorclass=mdbcursors.DictCursor)
             else:
                 connected=False
                 retry=0
