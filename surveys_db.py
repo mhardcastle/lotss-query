@@ -288,7 +288,7 @@ class SurveysDB(object):
             if k=='id':
                 continue
             if record[k] is not None:
-                if np.isnan(record[k]):
+                if isinstance(record[k],float) and np.isnan(record[k]):
                     record[k]=None # should work for NULL
                 self.execute('update '+table+' set '+k+'=%s where id=%s',(record[k],id))
 
