@@ -52,7 +52,7 @@ from surveys_db import SurveysDB
 
 with SurveysDB() as sdb:
     result=sdb.db_get('fields','P35Hetdex10')
-    print result
+    print(result)
 ```
 
 The SurveysDB class does the work of setting up an ssh tunnel (if run
@@ -82,7 +82,7 @@ Methods `get_field`, `set_field` etc are wrappers around
 Use in the pipeline
 -------------------
 
-To use the database hooks set the environment variable `DDF_PIPELINE_DATABASE`.
+To use the database hooks in ddf-pipeline itself set the environment variable `DDF_PIPELINE_DATABASE`.
 
 Setting this variable has the following effects:
 
