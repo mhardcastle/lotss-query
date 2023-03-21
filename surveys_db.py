@@ -217,7 +217,7 @@ class SurveysDB(object):
                         self.con = mdb.connect(host='127.0.0.1', user='survey_user', password=self.password, database=self.database, port=localport, cursorclass=mdbcursors.DictCursor)
                         connected=True
                     except mdb.OperationalError as e:
-                        print('Database temporary error! Sleep %i seconds to retry\n' % sleeptime ,e)
+                        print('Database temporary error! Sleep %i seconds to retry\n' % sleeptime,e)
                         retry+=1
                         sleep(sleeptime)
             else:
@@ -228,8 +228,7 @@ class SurveysDB(object):
                         self.con = mdb.connect(mysql_host, 'survey_user', self.password, self.database, cursorclass=mdbcursors.DictCursor)
                         connected=True
                     except mdb.OperationalError as e:
-                        time=60
-                        print('Database temporary error! Sleep %i seconds to retry\n' % time ,e)
+                        print('Database temporary error! Sleep %i seconds to retry\n' % sleeptime,e)
                         retry+=1
                         sleep(sleeptime)
                 if not connected:
