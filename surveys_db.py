@@ -14,7 +14,6 @@ except ImportError:
     import pymysql as mdb
     import pymysql.cursors as mdbcursors
 
-
 def get_next():
     # return the name of the top-priority field with appropriate status
     sdb=SurveysDB(readonly=True)
@@ -144,7 +143,7 @@ class SurveysDB(object):
     def __exit__(self, type, value, tb):
         self.close()
 
-    def __init__(self,readonly=False,verbose=False,survey=None):
+    def __init__(self,readonly=False,verbose=False,survey=None,retrynumber=10,sleeptime=60):
 
         if survey is None:
             survey='hba' # preserve old default behaviour
@@ -199,23 +198,32 @@ class SurveysDB(object):
                     logger=None
                 # Reading the key ensures an error if it doesn't exist
                 self.pkey=sshtunnel.SSHTunnelForwarder.read_private_key_file(home+'/.ssh/'+self.ssh_key)
-                self.tunnel=sshtunnel.SSHTunnelForwarder('lofar.herts.ac.uk',
-                                                         ssh_username=self.ssh_user,
-                                                         ssh_pkey=self.pkey,
-                                                         remote_bind_address=('127.0.0.1',3306),
-                                                         local_bind_address=('127.0.0.1',),
-                                                         host_pkey_directories=[],
-                                                         allow_agent=True,
-                                                         logger=logger
-                                                         )
+                connected=False
+                retry=0
+                while not connected and retry<retrynumber:
+                    self.tunnel=sshtunnel.SSHTunnelForwarder('lofar.herts.ac.uk',
+                                                             ssh_username=self.ssh_user,
+                                                             ssh_pkey=self.pkey,
+                                                             remote_bind_address=('127.0.0.1',3306),
+                                                             local_bind_address=('127.0.0.1',),
+                                                             host_pkey_directories=[],
+                                                             allow_agent=True,
+                                                             logger=logger
+                                                             )
 
-                self.tunnel.start()
-                localport=self.tunnel.local_bind_port
-                self.con = mdb.connect(host='127.0.0.1', user='survey_user', password=self.password, database=self.database, port=localport, cursorclass=mdbcursors.DictCursor)
+                    self.tunnel.start()
+                    localport=self.tunnel.local_bind_port
+                    try:
+                        self.con = mdb.connect(host='127.0.0.1', user='survey_user', password=self.password, database=self.database, port=localport, cursorclass=mdbcursors.DictCursor)
+                        connected=True
+                    except mdb.OperationalError as e:
+                        print('Database temporary error! Sleep %i seconds to retry\n' % sleeptime ,e)
+                        retry+=1
+                        sleep(sleeptime)
             else:
                 connected=False
                 retry=0
-                while not connected and retry<10:
+                while not connected and retry<retrynumber:
                     try:
                         self.con = mdb.connect(mysql_host, 'survey_user', self.password, self.database, cursorclass=mdbcursors.DictCursor)
                         connected=True
@@ -223,7 +231,7 @@ class SurveysDB(object):
                         time=60
                         print('Database temporary error! Sleep %i seconds to retry\n' % time ,e)
                         retry+=1
-                        sleep(time)
+                        sleep(sleeptime)
                 if not connected:
                     raise RuntimeError("Cannot connect to database server after repeated retry")
         self.cur = self.con.cursor()
