@@ -211,13 +211,19 @@ class SurveysDB(object):
                                                              logger=logger
                                                              )
 
-                    self.tunnel.start()
+                    try:
+                        self.tunnel.start()
+                    except sshtunnel.BaseSSHTunnelForwarderError as e:
+                        print('ssh tunnel temporary error %s! Sleep %i seconds to retry' % (e,sleeptime))
+                        retry+=1
+                        sleep(sleeptime)
+                        continue
                     localport=self.tunnel.local_bind_port
                     try:
                         self.con = mdb.connect(host='127.0.0.1', user='survey_user', password=self.password, database=self.database, port=localport, cursorclass=mdbcursors.DictCursor)
                         connected=True
                     except mdb.OperationalError as e:
-                        print('Database temporary error! Sleep %i seconds to retry\n' % sleeptime,e)
+                        print('Database temporary error %s! Sleep %i seconds to retry\n' % (e,sleeptime))
                         retry+=1
                         sleep(sleeptime)
             else:
