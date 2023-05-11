@@ -182,7 +182,7 @@ class SurveysDB(object):
         if self.hostname=='lofar-server':
             if verbose:
                 print('Using direct connection to localhost')
-            self.con=mdb.connect('127.0.0.1', 'survey_user', self.password, self.database, cursorclass=mdbcursors.DictCursor)
+            self.con=mdb.connect(host='127.0.0.1', user='survey_user', password=self.password, database=self.database, cursorclass=mdbcursors.DictCursor)
         else:
             try:
                 dummy=socket.gethostbyname(mysql_host)
