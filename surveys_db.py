@@ -236,6 +236,7 @@ class SurveysDB(object):
         return table
         
     def db_get(self,table,id):
+        if self.closed: raise RuntimeError('Attempting DB operation but instance is closed')
         table=self.check_table(table)
         self.execute('select * from '+table+' where id=%s',(id,))
         result=self.cur.fetchall()
@@ -245,6 +246,7 @@ class SurveysDB(object):
             return result[0]
 
     def db_set(self,table,record):
+        if self.closed: raise RuntimeError('Attempting DB operation but instance is closed')
         if self.readonly: raise RuntimeError('Write requested in read-only mode')
         table=self.check_table(table)
         id=record['id'];
@@ -257,12 +259,14 @@ class SurveysDB(object):
                 self.execute('update '+table+' set '+k+'=%s where id=%s',(record[k],id))
 
     def db_create(self,table,id):
+        if self.closed: raise RuntimeError('Attempting DB operation but instance is closed')
         table=self.check_table(table)
         if self.readonly: raise RuntimeError('Create requested in read-only mode')
         self.execute('insert into '+table+'(id) values (%s)',(id,))
         return self.db_get(table,id)
 
     def db_delete(self,table,id):
+        if self.closed: raise RuntimeError('Attempting DB operation but instance is closed')
         table=self.check_table(table)
         if self.readonly: raise RuntimeError('Delete requested in read-only mode')
         self.execute('delete from '+table+' where id=%s',(id,))
