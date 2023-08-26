@@ -10,9 +10,11 @@ from time import sleep
 try:
     import MySQLdb as mdb
     import MySQLdb.cursors as mdbcursors
+    mdb_type='MySQLdb'
 except ImportError:
     import pymysql as mdb
     import pymysql.cursors as mdbcursors
+    mdb_type='pymysql'
 
 # General surveys_db functions for use with the various surveys that
 # use the central KSP database. Survey-specific functions live in the
@@ -81,7 +83,7 @@ class SurveysDB(object):
         self.close()
 
     def __init__(self,readonly=False,verbose=False,survey=None,retrynumber=10,sleeptime=60):
-
+        if verbose: print('MySQL type is',mdb_type)
         if survey is None:
             survey='hba' # preserve old default behaviour
         # get the config file -- this must exist
@@ -117,9 +119,13 @@ class SurveysDB(object):
         self.usetunnel=False
         self.hostname=socket.gethostname()
         if self.hostname=='lofar-server':
+            # Running on the database server itself
             if verbose:
                 print('Using direct connection to localhost')
-            self.con=mdb.connect(host='127.0.0.1', user='survey_user', password=self.password, database=self.database, cursorclass=mdbcursors.DictCursor)
+            if mdb_type=='MySQLdb':
+                self.con=mdb.connect('127.0.0.1', 'survey_user', self.password, self.database, cursorclass=mdbcursors.DictCursor)
+            else:
+                self.con=mdb.connect(host='127.0.0.1', user='survey_user', password=self.password, database=self.database, cursorclass=mdbcursors.DictCursor)
         else:
             try:
                 dummy=socket.gethostbyname(mysql_host)
@@ -129,6 +135,7 @@ class SurveysDB(object):
                 self.usetunnel=True
 
             if self.usetunnel:
+                # Create an ssh tunnel and connect through that
                 if verbose:
                     logger=sshtunnel.create_logger(loglevel=10)
                 else:
@@ -157,18 +164,25 @@ class SurveysDB(object):
                         continue
                     localport=self.tunnel.local_bind_port
                     try:
-                        self.con = mdb.connect(host='127.0.0.1', user='survey_user', password=self.password, database=self.database, port=localport, cursorclass=mdbcursors.DictCursor)
+                        if mdb_type=='MySQLdb':
+                            self.con = mdb.connect('127.0.0.1', 'survey_user', self.password, self.database, port=localport, cursorclass=mdbcursors.DictCursor)
+                        else:
+                            self.con = mdb.connect(host='127.0.0.1', user='survey_user', password=self.password, database=self.database, port=localport, cursorclass=mdbcursors.DictCursor)
                         connected=True
                     except mdb.OperationalError as e:
                         print('Database temporary error %s! Sleep %i seconds to retry\n' % (e,sleeptime))
                         retry+=1
                         sleep(sleeptime)
             else:
+                # Network connection not using ssh tunnel
                 connected=False
                 retry=0
                 while not connected and retry<retrynumber:
                     try:
-                        self.con = mdb.connect(mysql_host, 'survey_user', self.password, self.database, cursorclass=mdbcursors.DictCursor)
+                        if mdb_type=='MySQLdb':
+                            self.con = mdb.connect(mysql_host, 'survey_user', self.password, self.database, cursorclass=mdbcursors.DictCursor)
+                        else:
+                            self.con = mdb.connect(host=mysql_host, user='survey_user', password=self.password, database=self.database, cursorclass=mdbcursors.DictCursor)                
                         connected=True
                     except mdb.OperationalError as e:
                         print('Database temporary error! Sleep %i seconds to retry\n' % sleeptime,e)
