@@ -112,6 +112,8 @@ class SurveysDB(object):
             self.database='surveys'
         elif self.survey=='lba':
             self.database='lba'
+        elif self.survey=='ilotss':
+            self.database='ilotss'
         else:
             raise NotImplementedError('Survey "%s" not known' % self.survey)
         
@@ -196,17 +198,17 @@ class SurveysDB(object):
         self.cur.execute('show tables')
         result=self.cur.fetchall()
         self.tables=[list(itervalues(d))[0] for d in result]
-        
-        if self.readonly:
-            pass
-            #can't use this feature on lofar's version of MariaDB
-            #self.cur.execute('set session transaction read only')
+        if len(self.tables)>0:
+            if self.readonly:
+                self.cur.execute('set session transaction read only')
+            else:
+                command='lock table '
+                for table in self.tables:
+                    command+=table+' write, '
+                command=command[:-2]
+                self.cur.execute(command)
         else:
-            command='lock table '
-            for table in self.tables:
-                command+=table+' write, '
-            command=command[:-2]
-            self.cur.execute(command)
+            raise RuntimeError('No tables in database')
         self.closed=False
 
     def execute(self,*args):
